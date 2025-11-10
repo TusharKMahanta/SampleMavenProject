@@ -39,81 +39,103 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
-			<!-- Build helper to register additional test sources -->
+			<!-- Compile integration tests separately -->
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>3.5.0</version>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
 				<executions>
 					<execution>
-						<id>add-component-test-source</id>
-						<phase>generate-test-sources</phase>
+						<id>compile-integration-tests</id>
+						<phase>process-test-classes</phase>
 						<goals>
-							<goal>add-test-source</goal>
+							<goal>compile</goal>
 						</goals>
 						<configuration>
-							<sources>
-								<source>src/component-test/java</source>
-							</sources>
+							<source>${java.version}</source>
+							<target>${java.version}</target>
+							<compileSourceRoots>
+								<compileSourceRoot>src/component-test/java</compileSourceRoot>
+							</compileSourceRoots>
+							<outputDirectory>${project.build.directory}/component-test-classes</outputDirectory>
 						</configuration>
-					</execution>
-					<execution>
-						<id>add-component-test-resource</id>
-						<phase>generate-test-resources</phase>
-						<goals>
-							<goal>add-test-resource</goal>
-						</goals> <configuration>
-						<resources>
-							<resource>
-								<directory>src/component-test/resources</directory>
-							</resource>
-						</resources>
-					</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
-			<!-- Unit tests -->
+			<!-- Copy integration test resources -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.2.5</version>
-				<configuration>
-					<includes>
-						<include>**/unit/test/**/*Test.java</include>
-					</includes>
-				</configuration>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<executions>
+					<execution>
+						<id>copy-component-test-resources</id>
+						<phase>process-test-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/component-test-classes</outputDirectory>
+							<resources>
+								<resource>
+									<directory>src/component-test/resources</directory>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 
-			<!-- Component tests -->
+			<!-- Run integration tests from custom folder -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>3.2.5</version>
 				<executions>
 					<execution>
-						<id>component-tests</id>
+						<id>integration-test</id>
 						<phase>integration-test</phase>
 						<goals>
 							<goal>integration-test</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>verify</id>
+						<phase>verify</phase>
+						<goals>
 							<goal>verify</goal>
 						</goals>
-						<configuration>
-							<includes>
-								<include>**/component/test/**/*Test.java</include>
-							</includes>
-						</configuration>
 					</execution>
 				</executions>
+				<configuration>
+					<testClassesDirectory>${project.build.directory}/component-test-classes</testClassesDirectory>
+					<includes>
+						<include>**/*ComponentTest.java</include>
+					</includes>
+					<additionalClasspathElements>
+						<additionalClasspathElement>${project.build.directory}/component-test-classes</additionalClasspathElement>
+					</additionalClasspathElements>
+				</configuration>
+			</plugin>
+
+			<!-- Surefire for unit tests -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.1.2</version>
+				<configuration>
+					<includes>
+						<include>**/*Test.java</include>
+					</includes>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
-
-
 </project>
